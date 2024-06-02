@@ -1,13 +1,15 @@
 # just poker. I made cuz gambling is cool and totally risk free and you should try it :)
 # btw if you dont get that to be satire you probably will loose all your money anyways
-import math, random, sys, tkinter as tk, asyncio, os, time
+import math, random, sys, tkinter as tk, os, time
 from tkinter import *
 from tkinter import ttk
 from collections import Counter # a cool lib i never knew existed. Saved me a tiny bit of time, although counting my own instances wouldnt be that hard
 from PIL import Image, ImageTk
+from threading import Timer
 '''  2
 1          3
      0
+ Order fyi
 '''
 rt = "Images/"
 class Game:
@@ -17,14 +19,15 @@ class Game:
         self.board = board
         self.deck = self.deck()
         self.hands = [Hand(self.deck), Hand(self.deck), Hand(self.deck), Hand(self.deck)]
-        self.money = [1000,1000,1000,1000]
+        self.outs = [False, False, False, False]
+        self.money = [100,100,100,100]
         self.round = 'flop'
         self.gameOver = True
         self.turn = 1
         self.counts = 0
         self.lastBet = None
         self.dealer = 0
-        self.ranking = ["High Card", "Pair", "Two Pair", "Three of a Kind", "Full House"]
+        self.ranking = ["High Card", "Pair", "Two Pair", "Three of a Kind", "Full House", "Straight", "Flush", "Four of a Kind", "Straight Flush", "Royal Flush"]
         self.center = [] # card classes
     def deck(self):
         deck = []
@@ -36,39 +39,61 @@ class Game:
     def playGame(self):
         if self.round == 'flop':
             self.flop()
-            self.betBlinds()
-            self.gameOver = False
-            self.bettinground()
+            self.round == 'turn'
+        else:
+            self.betBlinds() # antee/blinds
+            pass
+        t = Timer(1, self.bettinground)
+        t1 = Timer(2, self.bettinground)
+        t2 = Timer(3, self.bettinground)
+        t.start()
+        t1.start()
+        t2.start()
+        self.gameOver = False
         if not self.gameOver and self.counts == 4: 
+            self.changeDealer()
             self.playGame()
     def bettinground(self):
         if not self.turn == 0 and self.counts < 4:
             botHand = self.evalHand(self.fullHand(self.hands[self.turn])) # what hand does the bot have determines how it plays
-            print(botHand)
+            self.counts+=1
             self.botThink(botHand)
             self.changeTurn()
-            self.counts+=1
-            self.bettinground() 
+        else:
+            return
     def humanBet(self):
         pass
     def changeTurn(self):
-        if not self.turn == 3:
+        if self.turn != 3:
             self.turn+=1
-        else:
+        else: 
             self.turn = 0
-    def bet(self, money):
-        self.money[self.turn]-=money
-        self.botsDisplay[self.turn].config(text="Money: $" + str(self.money[self.turn]))
+    def changeDealer(self):
+        if self.dealer != 3:
+            self.dealer+=1
+        else: 
+            self.dealer = 0
+    def bet(self, m):
+        self.botsDisplay[self.turn].config(text="Money: $" + str(self.money[self.turn])) 
+        #t = Timer(3, party_time, args=None, kwargs=None) 
+     
     def fullHand(self, x):
         a = self.center
         a.extend(x)
         return a
+    def nextd(self, n):
+         if not self.dealer == 3:
+            return self.dealer+1
+         else:
+            return 0
     def betBlinds(self):
-        pass
+        for x in range(self.nextd(1), self.nextd(2)):
+            self.money[x]-=2
+            self.botsDisplay[x].config(text="Money: $" + str(self.money[self.turn]))
     def flop(self):
         for x in range(3):
             r = random.randint(0, len(self.deck)-1)
-            e = Card(rt + self.deck[r])
+            e = Card(self.deck[r])
             self.deck.remove(e.orig)
             self.center.append(e)
         for x in range(len(self.center)):
@@ -83,8 +108,8 @@ class Game:
         pass
     def river(self):
         pass
-    def displayHand():
-        pass           
+    def displayHand(self):
+        pass    
     def evalHand(self,fullHanda): # array of cardclasses
         myHand = ''
         suits = [x.suit for x in fullHanda]
@@ -115,42 +140,51 @@ class Game:
             myHand = 'High Card'
             
         return myHand
-    def makeBet(player, money):
-        self.money[player]-=money
-    @property
-    def getrn(self):
-        return self.round
-    def getprb(self): # get the probability of a card createing a good hand. For advanced bots
+    def handSum(self, hand): 
         pass
     def botThink(self, hand):
         ranking = self.ranking.index(hand)
-        self.bet(10)
-        '''doBluff = random.choice([True, False, False, False])
+        mon = 0
+        if self.turn == 1:
+            if 1-self.dealer == 0:
+                pass # possibility of check
+            addition = random.randint(1, 4) # fluctuaction in bet
+        if self.turn == 2:
+            pass
+        if self.turn == 3:
+            pass
+
+        if not self.money[self.turn] < 0:
+            self.money[self.turn]-=mon
+            self.bet(10)
+        else:
+            self.outs[self.turn] = True
+
         doRaise = None
-        if doBluff:
-            add = random.randint(10,20)'''
-class Card():
+    def displayGUIBanner():
+        pass # says thigs like who bet, etc
+def hubet():
+    if game.turn == 0:
+        money = int(e.get())
+        game.money[0] -=money
+        game.bet(0)
+        game.changeTurn()
+
+class Card:
     def __init__(self, raw):
         self.orig = raw
         self.raw = raw.split("_")
         self.suit = self.raw[2]
         self.rank = self.raw[0]
-        self.img = raw + '.png'
+        self.img = 'Images/' +raw + '.png'
 def Hand(deck):
     hand = []
-
     for x in range(2):
         r = random.randint(0, len(deck)-1)
-        e = Card(rt + deck[r])
+        e = Card(deck[r])
         hand.append(e)
         deck.remove(e.orig)
     return hand
-def GETEXDIR():
-    try:
-        pass
-    except Exception:
-        sys._MEIPASS()
-        pass
 def playAgain():
     global game
     game = Game(board, [m1, m2, m3, m4])
@@ -165,13 +199,14 @@ menuRoot.add_cascade(label="Game", menu=gm)
 menuRoot.add_cascade(label="Options", menu=gm)
 menuRoot.add_cascade(label="Help", menu=gm)
 
-gm.add_command(label="New Game", command=lambda:playAgain())
+gm.add_command(label="New Game", command=playAgain)
 root.state('zoomed')
 root.title("Texas Hold'em Poker - Windows Edition")
+
 table = Frame(root, width=1400, height=800, background="green")
 table.place(x=100, y=10)
+t = Label(table, text="Poker!", font=("Arial", 17), background="green3", width=110, foreground="black").place(x=0, y=0)
 board = Frame(table, width=750, height=270, background="lightgreen")
-Label(table, text="90% of Gamblers Quit before they win big!!", font=("Arial", 17)).place(x=480, y=0)
 board.place(x=300, y=230)
 bot1, bot2, bot3 = Frame(root, width=200, height=200, background="darkcyan"),Frame(root, width=200, height=200, background="darkcyan"),Frame(root, width=200, height=200, background="darkcyan")
 bot1.place(x=140, y=400)
@@ -182,16 +217,16 @@ playerspot.place(x=600, y=500)
 e=Entry(playerspot)
 e.place(x=50, y=30)
 
-m1 = Label(playerspot, text="Money: $1000", font=("Arial", 16), background="gold")
+m1 = Label(playerspot, text="Money: $100", font=("Arial", 16), background="gold")
 m1.place(x=100, y=0)
-m2 = Label(bot1, text="Money: $1000", font=("Arial", 16), background="gold")
+m2 = Label(bot1, text="Money: $100", font=("Arial", 16), background="gold")
 m2.place(x=0, y=0)
-m3 = Label(bot2, text="Money: $1000", font=("Arial", 16), background="gold")
+m3 = Label(bot2, text="Money: $100", font=("Arial", 16), background="gold")
 m3.place(x=0, y=0)
-m4 = Label(bot3, text="Money: $1000", font=("Arial", 16), background="gold")
+m4 = Label(bot3, text="Money: $100", font=("Arial", 16), background="gold")
 m4.place(x=0, y=0)
 
-Button(playerspot, text="Bet").place(x=180, y=30)
+Button(playerspot, text="Bet", command=hubet).place(x=180, y=30)
 Button(playerspot, text="Call", width=9).place(x=210, y=30)
 Button(playerspot, text="Fold", width=9).place(x=270, y=30)
 
